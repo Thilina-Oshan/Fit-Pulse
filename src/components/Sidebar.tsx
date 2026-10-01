@@ -18,13 +18,17 @@ interface SidebarProps {
   setCurrentTab: (tab: string) => void;
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
+  currentUser?: any;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   currentTab, 
   setCurrentTab, 
   userRole, 
-  setUserRole 
+  setUserRole,
+  currentUser,
+  onLogout
 }) => {
   // A state to control opening and closing the sidebar on mobile.
   const [isOpen, setIsOpen] = useState(false);
@@ -49,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* 1. Mobile Top Bar (Header visible only on mobile screens)*/}
+      {/* 1. Mobile Top Bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-40">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 bg-blue-600 rounded-lg shadow-md shadow-blue-600/30">
@@ -67,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* 2. Mobile Backdrop Overlay (to close the sidebar when clicking outside it) */}
+      {/* 2. Mobile Backdrop Overlay */}
       {isOpen && (
         <div 
           onClick={() => setIsOpen(false)}
@@ -95,7 +99,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* Close button inside Sidebar for Mobile */}
           <button 
             onClick={() => setIsOpen(false)} 
             className="lg:hidden text-slate-400 hover:text-white p-1"
@@ -142,22 +145,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </select>
         </div>
 
-        {/* Footer Profile/Logout */}
+        {/* Footer Profile & Logout Section */}
         <div className="p-4 border-t border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"
+              src={currentUser?.profile?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
               alt="User"
               className="w-9 h-9 rounded-full object-cover border border-slate-700"
             />
             <div className="text-left">
               <p className="text-sm font-semibold text-slate-200 leading-none">
-                {userRole === 'ADMIN' ? 'Owner Admin' : userRole === 'TRAINER' ? 'Coach Nimal' : 'Kasun (Member)'}
+                {currentUser?.profile?.firstName 
+                  ? `${currentUser.profile.firstName} ${currentUser.profile.lastName || ''}`
+                  : userRole === 'ADMIN' ? 'Owner Admin' : userRole === 'TRAINER' ? 'Coach Nimal' : 'Kasun (Member)'}
               </p>
               <span className="text-[10px] text-blue-400 font-bold">{userRole}</span>
             </div>
           </div>
-          <button className="text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-slate-800 transition">
+          <button 
+            onClick={onLogout}
+            className="text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-slate-800 transition"
+            title="Logout"
+          >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
