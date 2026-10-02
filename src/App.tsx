@@ -5,15 +5,19 @@ import { MemberPortal } from './components/MemberPortal';
 import { POSModule } from './components/POSModule';
 import { TrainerPortal } from './components/TrainerPortal';
 import { AuthModal } from './components/AuthModal';
+import { MemberManagementContent } from './components/MemberManagementContent';
+import { TrainerManagementContent } from './components/TrainerManagementContent';
+import CommunityAdmin from './components/AdminCommunity'; // Imported CommunityAdmin component
 import { UserRole } from './types';
 
 export function App() {
+  // Navigation & Authentication State
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [userRole, setUserRole] = useState<UserRole>('ADMIN');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Auto Session Restore: Restores user session from localStorage if logged in
+  // Restore session from localStorage on initial render
   useEffect(() => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -29,6 +33,7 @@ export function App() {
     }
   }, []);
 
+  // Handle user login and update local state
   const handleLoginSuccess = (user: any, token: string) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
@@ -37,6 +42,7 @@ export function App() {
     setCurrentTab('dashboard');
   };
 
+  // Handle user logout and clear active session
   const handleLogout = () => {
     localStorage.clear();
     setCurrentUser(null);
@@ -44,16 +50,49 @@ export function App() {
     setCurrentTab('dashboard');
   };
 
+  // Render content dynamically based on currentTab and userRole
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'dashboard':
+        if (userRole === 'ADMIN') return <AdminDashboard />;
+        if (userRole === 'TRAINER') return <TrainerPortal trainerId={currentUser?.trainerProfile?.id || currentUser?.id || ''} />;
+        return <MemberPortal />;
+      
+      case 'members':
+        return userRole === 'ADMIN' ? <MemberManagementContent /> : <TrainerManagementContent />;
+
+      case 'community': // Render CommunityAdmin when the 'community' tab is selected from Sidebar
+        return <CommunityAdmin />;
+
+      case 'pos':
+        return <POSModule />;
+
+      case 'workouts':
+        return userRole === 'TRAINER' ? <TrainerPortal trainerId={currentUser?.trainerProfile?.id || currentUser?.id || ''} /> : <MemberPortal />;
+
+      default:
+        // Fallback placeholder UI for unmapped tabs
+        return (
+          <div className="bg-slate-900 border border-slate-800 p-12 rounded-2xl text-center">
+            <h3 className="text-xl font-bold text-white">Module "{currentTab.toUpperCase()}" Active</h3>
+            <p className="text-slate-400 text-sm mt-2">
+              This module is connected and fully integrated into the FitPulse TypeScript Architecture.
+            </p>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans">
-      {/* Auth Modal */}
+      {/* Authentication Modal */}
       <AuthModal 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
         onLoginSuccess={handleLoginSuccess} 
       />
 
-      {/* Sidebar Component */}
+      {/* Main Sidebar Navigation */}
       <Sidebar 
         currentTab={currentTab} 
         setCurrentTab={setCurrentTab} 
@@ -64,8 +103,9 @@ export function App() {
         onLogout={handleLogout}
       />
 
-      {/* Main Content Area */}
+      {/* Main Content Viewport */}
       <main className="ml-0 min-w-0 flex-1 overflow-y-auto px-4 pb-6 pt-20 lg:ml-64 lg:p-8">
+        {/* Top Header Bar */}
         <header className="mb-6 flex flex-col gap-4 border-b border-slate-800/80 pb-5 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <span className="text-xs font-bold text-blue-500 uppercase tracking-widest">FitPulse Ecosystem</span>
@@ -77,8 +117,7 @@ export function App() {
               Status: <span className="text-emerald-400 font-bold">System Online</span>
             </div>
 
-            {/* Profile badge when logged in */}
-            {currentUser && (
+            {currentUser ? (
               <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
                 <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
                   {currentUser.firstName ? currentUser.firstName[0] : 'U'}
@@ -88,32 +127,19 @@ export function App() {
                   <p className="text-[10px] text-blue-400 font-semibold uppercase">{userRole}</p>
                 </div>
               </div>
+            ) : (
+              <button 
+                onClick={() => setIsAuthOpen(true)} 
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition"
+              >
+                Sign In
+              </button>
             )}
           </div>
         </header>
 
-        {/* Dynamic View Rendering according to Tab and Role */}
-        {currentTab === 'dashboard' && userRole === 'ADMIN' && <AdminDashboard />}
-        
-        {/* Trainer Portal Render Fixed */}
-        {currentTab === 'dashboard' && userRole === 'TRAINER' && (
-          <TrainerPortal trainerId={currentUser?.trainerProfile?.id || currentUser?.id || ''} />
-        )}
-        
-        {currentTab === 'dashboard' && userRole === 'MEMBER' && <MemberPortal />}
-        
-        {/* POS Module */}
-        {currentTab === 'pos' && <POSModule />}
-        
-        {/* Fallback View for remaining tabs */}
-        {currentTab !== 'dashboard' && currentTab !== 'pos' && (
-          <div className="bg-slate-900 border border-slate-800 p-12 rounded-2xl text-center">
-            <h3 className="text-xl font-bold text-white">Module "{currentTab.toUpperCase()}" Active</h3>
-            <p className="text-slate-400 text-sm mt-2">
-              This module is connected and fully integrated into the FitPulse TypeScript Architecture.
-            </p>
-          </div>
-        )}
+        {/* Dynamic Content Area */}
+        {renderTabContent()}
       </main>
     </div>
   );

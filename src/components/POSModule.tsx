@@ -7,7 +7,7 @@ export const POSModule: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [cart, setCart] = useState<{ item: POSItem; quantity: number }[]>([]);
 
-  // 1. Backend එකෙන් POS Items Fetch කර ගැනීම
+  // 1. Fetching POS items from the backend
   useEffect(() => {
     fetch('http://localhost:5000/api/pos/products')
       .then((res) => res.json())
