@@ -1,25 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { AdminDashboard } from './components/AdminDashboard';
 import { MemberPortal } from './components/MemberPortal';
 import { POSModule } from './components/POSModule';
+import { TrainerPortal } from './components/TrainerPortal';
+import { AuthModal } from './components/AuthModal';
 import { UserRole } from './types';
-
-// [DISABLED AUTH] - Newly added Auth Modal and Icons are temporarily disabled
-// import { AuthModal } from './components/AuthModal';
-// import { Flame, LogIn, ShieldCheck } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  
-  // Set default role to 'ADMIN' as it was previously configured
   const [userRole, setUserRole] = useState<UserRole>('ADMIN');
-
-  // [DISABLED AUTH] - Auto Session Restore State
-  /*
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  // Auto Session Restore: Restores user session from localStorage if logged in
   useEffect(() => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -36,6 +30,8 @@ export function App() {
   }, []);
 
   const handleLoginSuccess = (user: any, token: string) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
     setCurrentUser(user);
     setUserRole(user.role as UserRole);
     setCurrentTab('dashboard');
@@ -44,50 +40,77 @@ export function App() {
   const handleLogout = () => {
     localStorage.clear();
     setCurrentUser(null);
-    setUserRole(null as any);
+    setUserRole('ADMIN');
     setCurrentTab('dashboard');
   };
-  */
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans">
-      {/* [DISABLED AUTH] - Auth Dialog Modal turned off */}
-      {/* <AuthModal 
+      {/* Auth Modal */}
+      <AuthModal 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
         onLoginSuccess={handleLoginSuccess} 
-      /> */}
+      />
 
-      {/* Directly displays Dashboard/Portal as configured previously */}
+      {/* Sidebar Component */}
       <Sidebar 
         currentTab={currentTab} 
         setCurrentTab={setCurrentTab} 
         userRole={userRole} 
-        setUserRole={(role) => setUserRole(role)}
-        // currentUser={currentUser}
-        // onLogout={handleLogout}
+        setUserRole={setUserRole} 
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
       />
 
-      {/* Main Workspace Area */}
+      {/* Main Content Area */}
       <main className="ml-0 min-w-0 flex-1 overflow-y-auto px-4 pb-6 pt-20 lg:ml-64 lg:p-8">
         <header className="mb-6 flex flex-col gap-4 border-b border-slate-800/80 pb-5 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <span className="text-xs font-bold text-blue-500 uppercase tracking-widest">FitPulse Ecosystem</span>
-            <h1 className="text-xl font-black text-white sm:text-2xl">Gym Operating Workstation</h1>
+            <h1 className="text-xl font-black text-white sm:text-2xl">Modern Gym Management System</h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-400">
+              Status: <span className="text-emerald-400 font-bold">System Online</span>
+            </div>
+
+            {/* Profile badge when logged in */}
+            {currentUser && (
+              <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
+                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
+                  {currentUser.firstName ? currentUser.firstName[0] : 'U'}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-white">{currentUser.firstName} {currentUser.lastName || ''}</p>
+                  <p className="text-[10px] text-blue-400 font-semibold uppercase">{userRole}</p>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* Role-Based Dynamic Views */}
+        {/* Dynamic View Rendering according to Tab and Role */}
         {currentTab === 'dashboard' && userRole === 'ADMIN' && <AdminDashboard />}
-        {currentTab === 'dashboard' && userRole === 'MEMBER' && <MemberPortal />}
-        {currentTab === 'pos' && userRole === 'ADMIN' && <POSModule />}
         
-        {/* Fallback View for missing roles or WIP pages */}
-        {((currentTab === 'pos' && userRole !== 'ADMIN') || (currentTab !== 'dashboard' && currentTab !== 'pos')) && (
+        {/* Trainer Portal Render Fixed */}
+        {currentTab === 'dashboard' && userRole === 'TRAINER' && (
+          <TrainerPortal trainerId={currentUser?.trainerProfile?.id || currentUser?.id || ''} />
+        )}
+        
+        {currentTab === 'dashboard' && userRole === 'MEMBER' && <MemberPortal />}
+        
+        {/* POS Module */}
+        {currentTab === 'pos' && <POSModule />}
+        
+        {/* Fallback View for remaining tabs */}
+        {currentTab !== 'dashboard' && currentTab !== 'pos' && (
           <div className="bg-slate-900 border border-slate-800 p-12 rounded-2xl text-center">
             <h3 className="text-xl font-bold text-white">Module "{currentTab.toUpperCase()}" Active</h3>
             <p className="text-slate-400 text-sm mt-2">
-              This feature is currently configured for role: <span className="text-blue-400 font-bold">{userRole}</span>.
+              This module is connected and fully integrated into the FitPulse TypeScript Architecture.
             </p>
           </div>
         )}

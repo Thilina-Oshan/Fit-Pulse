@@ -19,6 +19,7 @@ interface SidebarProps {
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
   currentUser?: any;
+  onOpenAuth?: () => void;
   onLogout?: () => void;
 }
 
@@ -28,6 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userRole, 
   setUserRole,
   currentUser,
+  onOpenAuth,
   onLogout
 }) => {
   // A state to control opening and closing the sidebar on mobile.
@@ -163,9 +165,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
           <button 
-            onClick={onLogout}
+            onClick={onOpenAuth ?? onLogout}
             className="text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-slate-800 transition"
-            title="Logout"
+            title={onLogout ? 'Logout' : 'Login'}
           >
             <LogOut className="w-4 h-4" />
           </button>

@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Plus, Minus, Trash2, CheckCircle2 } from 'lucide-react';
-import { mockPOSItems } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Plus, Minus, CheckCircle2 } from 'lucide-react';
 import { POSItem } from '../types';
 
 export const POSModule: React.FC = () => {
+  const [products, setProducts] = useState<POSItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [cart, setCart] = useState<{ item: POSItem; quantity: number }[]>([]);
+
+  // 1. Backend එකෙන් POS Items Fetch කර ගැනීම
+  useEffect(() => {
+    fetch('http://localhost:5000/api/pos/products')
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching POS products:', err);
+        setLoading(false);
+      });
+  }, []);
 
   const addToCart = (item: POSItem) => {
     setCart((prev) => {
@@ -34,6 +49,34 @@ export const POSModule: React.FC = () => {
 
   const totalAmount = cart.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
 
+  // 2. Checkout Event එක Backend එකට Send කිරීම
+  const handleCheckout = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/pos/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cart: cart.map(c => ({ id: c.item.id, quantity: c.quantity, price: c.item.price })),
+          totalAmount
+        })
+      });
+
+      if (response.ok) {
+        alert('Payment Processed Successfully! Print Invoice Generated.');
+        setCart([]);
+      } else {
+        alert('Checkout failed! Please try again.');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Error processing checkout');
+    }
+  };
+
+  if (loading) {
+    return <div className="text-white text-center py-10">Loading Products...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -44,29 +87,33 @@ export const POSModule: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Product Catalog */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mockPOSItems.map((item) => (
-            <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between">
-              <img src={item.image} alt={item.name} className="h-40 w-full object-cover" />
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-400 bg-blue-950/50 border border-blue-800/40 px-2 py-0.5 rounded">
-                    {item.category}
-                  </span>
-                  <h3 className="font-bold text-white text-sm mt-2">{item.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1">Stock available: {item.stock} pcs</p>
-                </div>
-                <div className="flex items-center justify-between mt-4">
-                  <span className="text-lg font-extrabold text-emerald-400">LKR {item.price.toLocaleString()}</span>
-                  <button
-                    onClick={() => addToCart(item)}
-                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition shadow-md shadow-blue-600/20"
-                  >
-                    <Plus className="w-4 h-4" /> Add to Cart
-                  </button>
+          {products.length === 0 ? (
+            <div className="text-slate-400 col-span-2">No products available in database.</div>
+          ) : (
+            products.map((item) => (
+              <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between">
+                <img src={item.image || "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=500"} alt={item.name} className="h-40 w-full object-cover" />
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-400 bg-blue-950/50 border border-blue-800/40 px-2 py-0.5 rounded">
+                      {item.category}
+                    </span>
+                    <h3 className="font-bold text-white text-sm mt-2">{item.name}</h3>
+                    <p className="text-xs text-slate-400 mt-1">Stock available: {item.stock} pcs</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4">
+                    <span className="text-lg font-extrabold text-emerald-400">LKR {item.price.toLocaleString()}</span>
+                    <button
+                      onClick={() => addToCart(item)}
+                      className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition shadow-md shadow-blue-600/20"
+                    >
+                      <Plus className="w-4 h-4" /> Add to Cart
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Cart & Billing Section */}
@@ -117,10 +164,7 @@ export const POSModule: React.FC = () => {
               </div>
 
               <button 
-                onClick={() => {
-                  alert('Payment Processed Successfully! Print Invoice Generated.');
-                  setCart([]);
-                }}
+                onClick={handleCheckout}
                 className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm"
               >
                 <CheckCircle2 className="w-4 h-4" /> Checkout & Print Receipt
