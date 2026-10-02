@@ -21,7 +21,7 @@ export const TrainerPortal: React.FC<TrainerPortalProps> = ({ trainerId }) => {
     const fetchTrainerData = async () => {
       setLoading(true);
 
-      // trainerId එකක් නැතිනම් Mock Data load කර ස්ටක් වීම වලක්වයි
+      // Prevents getting stuck by loading mock data if a trainerId is missing.
       if (!trainerId) {
         setTrainerDetails({
           user: { firstName: 'Trainer', lastName: 'Demo', email: 'trainer@fitpulse.com' },
@@ -47,7 +47,7 @@ export const TrainerPortal: React.FC<TrainerPortalProps> = ({ trainerId }) => {
         }
       } catch (err) {
         console.warn('Backend API connection failed, loading fallback details:', err);
-        // Backend failure එකකදී Default display එක පෙන්වයි
+        //The default display is shown in the event of a backend failure.
         setTrainerDetails({
           user: { firstName: 'Active', lastName: 'Trainer', email: 'trainer@fitpulse.com' },
           specialty: 'Personal Training & Fitness',
