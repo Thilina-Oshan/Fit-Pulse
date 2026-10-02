@@ -50,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleTabClick = (tabId: string) => {
     setCurrentTab(tabId);
-    setIsOpen(false); // Mobile එකේදී tab එකක් click කළ විට sidebar එක auto-close වේ
+    setIsOpen(false); // On mobile, the sidebar auto-closes when a tab is clicked.
   };
 
   return (
